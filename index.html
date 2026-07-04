@@ -30,12 +30,12 @@
         .row { display: flex; gap: 10px; margin-bottom: 10px; }
         .field { flex: 1; display: flex; flex-direction: column; }
         .field label { font-size: 0.75rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; }
-        select, input { background: #2d2d2d; border: 1px solid #444; color: white; padding: 12px; border-radius: 8px; font-size: 1rem; width: 100%; box-sizing: border-box; color-scheme: dark; }
+        select, input, textarea { background: #2d2d2d; border: 1px solid #444; color: white; padding: 12px; border-radius: 8px; font-size: 1rem; width: 100%; box-sizing: border-box; color-scheme: dark; font-family: inherit; }
+        textarea { resize: none; height: 75px; }
         
         button.action-btn { width: 100%; background: #333; color: white; border: 1px solid #444; padding: 12px; border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; margin-top: 2px; }
         button.action-btn:active { background: var(--accent); border-color: var(--accent); }
         
-        /* PR Ledger Styling Tables */
         .pr-card { background: #161616; border: 1px dashed #444; border-radius: 10px; padding: 12px; margin-top: 15px; }
         .pr-title { font-size: 0.85rem; font-weight: bold; color: var(--gold); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px; }
         .pr-row { display: flex; justify-content: space-between; font-size: 0.9rem; padding: 6px 0; border-bottom: 1px dashed #2d2d2d; }
@@ -101,7 +101,17 @@
                         <button class="action-btn" id="btn-core" onclick="logCoreSet()">Log Core Finisher</button>
                     </div>
                 </div>
+
+                <div id="block-notes" class="input-group hidden">
+                    <div class="block-header">Training Session Notes</div>
+                    <div class="field">
+                        <label for="val-notes">Athlete Comments / Feedback</label>
+                        <textarea id="val-notes" placeholder="How did training feel today? Any soreness, tight spots, or wins?"></textarea>
+                    </div>
+                    <button class="action-btn" id="btn-notes" style="margin-top:12px;" onclick="logWorkoutNotes()">Submit Workout Notes</button>
+                </div>
             </div>
+            
             <div id="no-workout-msg" class="no-workout hidden">
                 No workouts scheduled for this date. 🏋️‍♂️⚾
             </div>
@@ -170,7 +180,7 @@
     <div id="status">💪 Saved Successfully!</div>
 
     <script>
-        const googleAppUrl = "https://script.google.com/macros/s/AKfycbx4tsVG7IoC16WpgakICXNzDqJ6-P5zn504-6kwsN2kWX_lH3DYNmZjchPiiMVonz8/exec";
+        const googleAppUrl = "PASTE_YOUR_WEB_APP_URL_HERE";
 
         let scheduleDatabase = [];
         let rosterDatabase = [];
@@ -244,7 +254,6 @@
         function calculatePlayerPersonalRecords() {
             const activePlayer = document.getElementById('global-player').value;
             
-            // 1. Process Testing Sub-ledger (60 dash is lowest score wins, others are highest)
             const pTests = testingLogs.filter(l => l.player === activePlayer);
             let prTest = { bodyWeight: "---", sixtyDash: "---", broadJump: "---", exitVelo: "---", throwingVelo: "---" };
             
@@ -264,7 +273,6 @@
                 <div class="pr-row"><strong>⚾ Throwing Velo:</strong> ${prTest.throwingVelo}</div>
             `;
 
-            // 2. Process Weight Room Maxes Sub-ledger (Highest number wins)
             const pMaxes = maxesLogs.filter(l => l.player === activePlayer);
             let prMax = { benchPress: "---", hexDL: "---", squat: "---", frontSquat: "---", hangClean: "---" };
             
@@ -370,6 +378,9 @@
                 document.getElementById('lbl-core-type').innerText = activeWorkout.Core_Type || 'Reps';
                 document.getElementById('val-core').value = '';
             } else { document.getElementById('block-core').classList.add('hidden'); }
+
+            // Unhide the training session notes frame if a workout exists for today
+            document.getElementById('block-notes').classList.remove('hidden');
         }
 
         function logSupersetItem(letter, subIndex) {
@@ -391,6 +402,28 @@
                 valInput.value = ''; repsInput.value = '';
                 loadWorkoutForDate(document.getElementById('date-picker').value); 
             }).catch(err => alert(err)).finally(() => btn.innerText = `Log Set ${letter}${subIndex}`);
+        }
+
+        function logWorkoutNotes() {
+            const btn = document.getElementById('btn-notes');
+            const txtArea = document.getElementById('val-notes');
+            if(!txtArea.value.trim()) { alert("Please type something before submitting your note."); return; }
+            btn.innerText = "Saving Note...";
+
+            const payload = {
+                type: "workout",
+                playerName: document.getElementById('global-player').value,
+                block: "Notes Block",
+                exercise: "Workout Notes",
+                weight: txtArea.value, // Text routes into weight column perfectly
+                reps: 0
+            };
+
+            fetch(googleAppUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
+            .then(() => {
+                showToast();
+                txtArea.value = '';
+            }).catch(err => alert(err)).finally(() => btn.innerText = "Submit Workout Notes");
         }
 
         function submitTestingForm() {
