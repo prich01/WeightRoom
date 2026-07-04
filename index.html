@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bearden Baseball Lifting</title>
+    <title>Bearden Baseball Hub</title>
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --accent: #ff4757; --text: #ffffff; --muted: #a0a0a0; --success: #2ed573; }
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); padding: 15px; display: flex; justify-content: center; }
@@ -11,7 +11,13 @@
         header { text-align: center; margin-bottom: 20px; }
         header h1 { margin: 0; font-size: 1.6rem; text-transform: uppercase; letter-spacing: 1px; color: #fff; }
         
-        .selector-group { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #2d2d2d; display: flex; gap: 10px; }
+        .selector-group { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border: 1px solid #2d2d2d; display: flex; gap: 10px; }
+        
+        /* Navigation Tabs Matrix */
+        .tab-navigation { display: flex; gap: 8px; margin-bottom: 15px; }
+        .nav-tab { flex: 1; text-align: center; background: #252525; border: 1px solid #383838; padding: 10px 5px; border-radius: 8px; font-size: 0.82rem; font-weight: bold; text-transform: uppercase; cursor: pointer; color: var(--muted); transition: all 0.2s; }
+        .nav-tab.active-tab { background: var(--accent); color: white; border-color: var(--accent); }
+        
         .input-group { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #2d2d2d; }
         .block-header { font-size: 0.85rem; font-weight: bold; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; letter-spacing: 0.5px; border-bottom: 1px solid #333; padding-bottom: 6px; }
         .exercise-container { margin-bottom: 15px; padding-bottom: 10px; }
@@ -27,10 +33,10 @@
         .field label { font-size: 0.75rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; }
         select, input { background: #2d2d2d; border: 1px solid #444; color: white; padding: 12px; border-radius: 8px; font-size: 1rem; width: 100%; box-sizing: border-box; color-scheme: dark; }
         
-        button.action-btn { width: 100%; background: #333; color: white; border: 1px solid #444; padding: 10px; border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; margin-top: 2px; }
+        button.action-btn { width: 100%; background: #333; color: white; border: 1px solid #444; padding: 12px; border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; margin-top: 2px; }
         button.action-btn:active { background: var(--accent); border-color: var(--accent); }
         
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; box-box-sizing: border-box; }
         .modal-content { background: var(--card); border: 1px solid #444; border-radius: 16px; padding: 20px; width: 100%; max-width: 380px; box-sizing: border-box; max-height: 80vh; overflow-y: auto; }
         .modal-header { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 8px; color: var(--accent); text-transform: uppercase; }
         .history-item-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #2d2d2d; font-size: 0.95rem; }
@@ -54,39 +60,87 @@
                     <option value="">Loading Roster...</option>
                 </select>
             </div>
-            <div class="field" style="flex: 1;">
+            <div class="field" id="date-wrapper" style="flex: 1;">
                 <label for="date-picker">Training Date</label>
                 <input type="date" id="date-picker">
             </div>
         </div>
 
-        <div id="workout-content">
-            <div id="block-warmup" class="input-group hidden">
-                <div class="block-header">Warmup Circuit</div>
-                <div class="exercise-title" id="txt-warmup">---</div>
-            </div>
+        <div class="tab-navigation">
+            <div class="nav-tab active-tab" id="tab-lift" onclick="switchViewMode('lift')">Workout</div>
+            <div class="nav-tab" id="tab-test" onclick="switchViewMode('test')">Testing</div>
+            <div class="nav-tab" id="tab-max" onclick="switchViewMode('max')">Max Lifts</div>
+        </div>
 
-            <div id="dynamic-blocks-container"></div>
+        <div id="view-workout-container">
+            <div id="workout-content">
+                <div id="block-warmup" class="input-group hidden">
+                    <div class="block-header">Warmup Circuit</div>
+                    <div class="exercise-title" id="txt-warmup">---</div>
+                </div>
 
-            <div id="block-core" class="input-group hidden">
-                <div class="block-header">Core Finisher</div>
-                <div class="exercise-container">
-                    <div class="exercise-title" id="txt-core">---</div>
-                    <div class="prescription-tag" id="rx-core">---</div>
-                    <div class="row">
-                        <div class="field">
-                            <label id="lbl-core-type">Input</label>
-                            <input type="number" id="val-core" inputmode="numeric" placeholder="---">
+                <div id="dynamic-blocks-container"></div>
+
+                <div id="block-core" class="input-group hidden">
+                    <div class="block-header">Core Finisher</div>
+                    <div class="exercise-container">
+                        <div class="exercise-title" id="txt-core">---</div>
+                        <div class="prescription-tag" id="rx-core">---</div>
+                        <div class="row">
+                            <div class="field">
+                                <label id="lbl-core-type">Input</label>
+                                <input type="number" id="val-core" inputmode="numeric" placeholder="---">
+                            </div>
                         </div>
+                        <button class="action-btn" id="btn-core" onclick="logCoreSet()">Log Core Finisher</button>
                     </div>
-                    <button class="action-btn" id="btn-core" onclick="logCoreSet()">Log Core Finisher</button>
                 </div>
             </div>
+            <div id="no-workout-msg" class="no-workout hidden">
+                No workouts scheduled for this date. 🏋️‍♂️⚾
+            </div>
         </div>
 
-        <div id="no-workout-msg" class="no-workout hidden">
-            No workouts scheduled for this date. 🏋️‍♂️⚾
+        <div id="view-testing-container" class="hidden">
+            <div class="input-group">
+                <div class="block-header">Athletic Performance Metrics</div>
+                
+                <div class="row">
+                    <div class="field"><label>Body Weight (lbs)</label><input type="number" step="0.1" id="t-weight" inputmode="decimal" placeholder="0.0"></div>
+                    <div class="field"><label>60 Yd Dash (sec)</label><input type="number" step="0.01" id="t-sixty" inputmode="decimal" placeholder="0.00"></div>
+                </div>
+                <div class="row">
+                    <div class="field"><label>Broad Jump (in)</label><input type="number" id="t-broad" inputmode="numeric" placeholder="0"></div>
+                    <div class="field"><label>Exit Velo (mph)</label><input type="number" id="t-exit" inputmode="numeric" placeholder="0"></div>
+                </div>
+                <div class="row" style="margin-bottom: 20px;">
+                    <div class="field"><label>Throwing Velo (mph)</label><input type="number" id="t-throw" inputmode="numeric" placeholder="0"></div>
+                </div>
+                
+                <button class="action-btn" id="btn-submit-testing" style="background: var(--success); border-color: var(--success);" onclick="submitTestingForm()">Submit Testing Data</button>
+            </div>
         </div>
+
+        <div id="view-maxes-container" class="hidden">
+            <div class="input-group">
+                <div class="block-header">Absolute Strength Max Records</div>
+                
+                <div class="row">
+                    <div class="field"><label>Bench Press (lbs)</label><input type="number" id="m-bench" inputmode="numeric" placeholder="0"></div>
+                    <div class="field"><label>Hex Deadlift (lbs)</label><input type="number" id="m-hex" inputmode="numeric" placeholder="0"></div>
+                </div>
+                <div class="row">
+                    <div class="field"><label>Back Squat (lbs)</label><input type="number" id="m-squat" inputmode="numeric" placeholder="0"></div>
+                    <div class="field"><label>Front Squat (lbs)</label><input type="number" id="m-front" inputmode="numeric" placeholder="0"></div>
+                </div>
+                <div class="row" style="margin-bottom: 20px;">
+                    <div class="field"><label>Hang Clean (lbs)</label><input type="number" id="m-clean" inputmode="numeric" placeholder="0"></div>
+                </div>
+                
+                <button class="action-btn" id="btn-submit-maxes" style="background: var(--success); border-color: var(--success);" onclick="submitMaxesForm()">Update Absolute Maxes</button>
+            </div>
+        </div>
+
     </div>
 
     <div id="history-modal" class="modal" onclick="closeHistoryModal()">
@@ -97,10 +151,10 @@
         </div>
     </div>
 
-    <div id="status">💪 Set Saved!</div>
+    <div id="status">💪 Saved Successfully!</div>
 
     <script>
-        const googleAppUrl = "https://script.google.com/macros/s/AKfycbx4tsVG7IoC16WpgakICXNzDqJ6-P5zn504-6kwsN2kWX_lH3DYNmZjchPiiMVonz8/exec";
+        const googleAppUrl = "PASTE_YOUR_WEB_APP_URL_HERE";
 
         let scheduleDatabase = [];
         let rosterDatabase = [];
@@ -113,11 +167,30 @@
             picker.addEventListener('change', (e) => loadWorkoutForDate(e.target.value));
             
             document.getElementById('global-player').addEventListener('change', (e) => {
-                // Save selection to mobile browser memory right when changed
                 localStorage.setItem('rememberedBaseballPlayer', e.target.value);
-                const curDate = document.getElementById('date-picker').value;
-                loadWorkoutForDate(curDate); 
+                loadWorkoutForDate(document.getElementById('date-picker').value); 
             });
+        }
+
+        function switchViewMode(mode) {
+            // Manage dynamic active status styling across elements
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active-tab'));
+            document.getElementById('view-workout-container').classList.add('hidden');
+            document.getElementById('view-testing-container').classList.add('hidden');
+            document.getElementById('view-maxes-container').classList.add('hidden');
+            document.getElementById('date-wrapper').classList.remove('hidden');
+
+            document.getElementById(`tab-${mode}`).classList.add('active-tab');
+            
+            if(mode === 'lift') {
+                document.getElementById('view-workout-container').classList.remove('hidden');
+            } else if(mode === 'test') {
+                document.getElementById('view-testing-container').classList.remove('hidden');
+                document.getElementById('date-wrapper').classList.add('hidden'); // date picker not needed for metric logs
+            } else if(mode === 'max') {
+                document.getElementById('view-maxes-container').classList.remove('hidden');
+                document.getElementById('date-wrapper').classList.add('hidden');
+            }
         }
 
         function fetchDatabaseResources() {
@@ -141,8 +214,6 @@
             rosterDatabase.forEach(p => {
                 let opt = document.createElement('option'); opt.value = p; opt.innerText = p; dropdown.appendChild(opt);
             });
-
-            // Read the phone memory device cache configuration string
             const savedPlayer = localStorage.getItem('rememberedBaseballPlayer');
             if (savedPlayer && rosterDatabase.includes(savedPlayer)) {
                 dropdown.value = savedPlayer;
@@ -253,10 +324,10 @@
             const valInput = document.getElementById(`val-${letter}${subIndex}`);
             const repsInput = document.getElementById(`reps-${letter}${subIndex}`);
             const exerciseName = activeWorkout[`${letter}${subIndex}_Exercise`];
-            
             btn.innerText = "Saving...";
 
             const payload = {
+                type: "workout",
                 playerName: document.getElementById('global-player').value,
                 block: `Block ${letter}`,
                 exercise: exerciseName,
@@ -272,30 +343,26 @@
             }).then(() => {
                 showToast();
                 historicalLogs.push({
-                    date: "Today",
-                    player: payload.playerName,
-                    exercise: payload.exercise,
-                    weight: payload.weight,
-                    reps: payload.reps
+                    date: "Today", player: payload.playerName, exercise: payload.exercise, weight: payload.weight, reps: payload.reps
                 });
                 valInput.value = ''; repsInput.value = '';
-                const curDate = document.getElementById('date-picker').value;
-                loadWorkoutForDate(curDate); 
-            }).catch(err => alert("Transmission fault: " + err))
+                loadWorkoutForDate(document.getElementById('date-picker').value); 
+            }).catch(err => alert(err))
               .finally(() => btn.innerText = `Log Set ${letter}${subIndex}`);
         }
 
-        function logCoreSet() {
-            const btn = document.getElementById('btn-core');
-            const coreInput = document.getElementById('val-core');
-            btn.innerText = "Saving...";
-
+        function submitTestingForm() {
+            const btn = document.getElementById('btn-submit-testing');
+            btn.innerText = "Transmitting...";
+            
             const payload = {
+                type: "testing",
                 playerName: document.getElementById('global-player').value,
-                block: 'Core Block',
-                exercise: activeWorkout.Core_Exercise,
-                weight: coreInput.value || 0,
-                reps: 1
+                bodyWeight: document.getElementById('t-weight').value || 0,
+                sixtyDash: document.getElementById('t-sixty').value || 0,
+                broadJump: document.getElementById('t-broad').value || 0,
+                exitVelo: document.getElementById('t-exit').value || 0,
+                throwingVelo: document.getElementById('t-throw').value || 0
             };
 
             fetch(googleAppUrl, {
@@ -304,8 +371,61 @@
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify(payload)
             }).then(() => {
-                showToast(); coreInput.value = '';
+                showToast();
+                document.getElementById('t-weight').value = '';
+                document.getElementById('t-sixty').value = '';
+                document.getElementById('t-broad').value = '';
+                document.getElementById('t-exit').value = '';
+                document.getElementById('t-throw').value = '';
             }).catch(err => alert(err))
+              .finally(() => btn.innerText = "Submit Testing Data");
+        }
+
+        function submitMaxesForm() {
+            const btn = document.getElementById('btn-submit-maxes');
+            btn.innerText = "Updating Records...";
+            
+            const payload = {
+                type: "maxes",
+                playerName: document.getElementById('global-player').value,
+                benchPress: document.getElementById('m-bench').value || 0,
+                hexDL: document.getElementById('m-hex').value || 0,
+                squat: document.getElementById('m-squat').value || 0,
+                frontSquat: document.getElementById('m-front').value || 0,
+                hangClean: document.getElementById('m-clean').value || 0
+            };
+
+            fetch(googleAppUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                showToast();
+                document.getElementById('m-bench').value = '';
+                document.getElementById('m-hex').value = '';
+                document.getElementById('m-squat').value = '';
+                document.getElementById('m-front').value = '';
+                document.getElementById('m-clean').value = '';
+            }).catch(err => alert(err))
+              .finally(() => btn.innerText = "Update Absolute Maxes");
+        }
+
+        function logCoreSet() {
+            const btn = document.getElementById('btn-core');
+            const coreInput = document.getElementById('val-core');
+            btn.innerText = "Saving...";
+
+            const payload = {
+                type: "workout",
+                playerName: document.getElementById('global-player').value,
+                block: 'Core Block', exercise: activeWorkout.Core_Exercise, weight: coreInput.value || 0, reps: 1
+            };
+
+            fetch(googleAppUrl, {
+                method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload)
+            }).then(() => { showToast(); coreInput.value = ''; })
+              .catch(err => alert(err))
               .finally(() => btn.innerText = "Log Core Finisher");
         }
 
