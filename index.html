@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bearden Baseball Lifting</title>
+    <style>
+        :root { --bg: #121212; --card: #1e1e1e; --accent: #ff4757; --text: #ffffff; --muted: #a0a0a0; --success: #2ed573; }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); padding: 15px; display: flex; justify-content: center; }
+        .app-container { width: 100%; max-width: 420px; }
+        header { text-align: center; margin-bottom: 20px; }
+        header h1 { margin: 0; font-size: 1.6rem; text-transform: uppercase; letter-spacing: 1px; color: #fff; }
+        
+        .selector-group { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #2d2d2d; display: flex; gap: 10px; }
+        .input-group { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #2d2d2d; }
+        .block-header { font-size: 0.85rem; font-weight: bold; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; letter-spacing: 0.5px; border-bottom: 1px solid #333; padding-bottom: 6px; }
+        .exercise-container { margin-bottom: 15px; padding-bottom: 10px; }
+        .exercise-container:last-of-type { margin-bottom: 0; padding-bottom: 0; }
+        .exercise-title { font-size: 1.15rem; font-weight: bold; margin-bottom: 2px; }
+        
+        .history-tag { font-size: 0.82rem; color: var(--muted); margin-bottom: 8px; display: flex; justify-content: space-between; background: #252525; padding: 6px 10px; border-radius: 6px; }
+        .view-hist-btn { color: var(--accent); text-decoration: underline; cursor: pointer; font-weight: bold; }
+        .prescription-tag { font-size: 0.85rem; color: var(--success); margin-bottom: 10px; font-weight: 600; text-transform: uppercase; }
+        
+        .row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .field { flex: 1; display: flex; flex-direction: column; }
+        .field label { font-size: 0.75rem; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; }
+        select, input { background: #2d2d2d; border: 1px solid #444; color: white; padding: 12px; border-radius: 8px; font-size: 1rem; width: 100%; box-sizing: border-box; color-scheme: dark; }
+        
+        button.action-btn { width: 100%; background: #333; color: white; border: 1px solid #444; padding: 10px; border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; margin-top: 2px; }
+        button.action-btn:active { background: var(--accent); border-color: var(--accent); }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+        .modal-content { background: var(--card); border: 1px solid #444; border-radius: 16px; padding: 20px; width: 100%; max-width: 380px; box-sizing: border-box; max-height: 80vh; overflow-y: auto; }
+        .modal-header { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 8px; color: var(--accent); text-transform: uppercase; }
+        .history-item-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #2d2d2d; font-size: 0.95rem; }
+        
+        #status { text-align: center; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--success); color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 100; }
+        .hidden { display: none !important; }
+        .no-workout { text-align: center; background: var(--card); padding: 30px; border-radius: 12px; color: var(--muted); }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <h1>⚡ Bearden Baseball</h1>
+        </header>
+
+        <div class="selector-group">
+            <div class="field" style="flex: 1.5;">
+                <label for="global-player">Active Athlete</label>
+                <select id="global-player">
+                    <option value="">Loading Roster...</option>
+                </select>
+            </div>
+            <div class="field" style="flex: 1;">
+                <label for="date-picker">Training Date</label>
+                <input type="date" id="date-picker">
+            </div>
+        </div>
+
+        <div id="workout-content">
+            <div id="block-warmup" class="input-group hidden">
+                <div class="block-header">Warmup Circuit</div>
+                <div class="exercise-title" id="txt-warmup">---</div>
+            </div>
+
+            <div id="dynamic-blocks-container"></div>
+
+            <div id="block-core" class="input-group hidden">
+                <div class="block-header">Core Finisher</div>
+                <div class="exercise-container">
+                    <div class="exercise-title" id="txt-core">---</div>
+                    <div class="prescription-tag" id="rx-core">---</div>
+                    <div class="row">
+                        <div class="field">
+                            <label id="lbl-core-type">Input</label>
+                            <input type="number" id="val-core" inputmode="numeric" placeholder="---">
+                        </div>
+                    </div>
+                    <button class="action-btn" id="btn-core" onclick="logCoreSet()">Log Core Finisher</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="no-workout-msg" class="no-workout hidden">
+            No workouts scheduled for this date. 🏋️‍♂️⚾
+        </div>
+    </div>
+
+    <div id="history-modal" class="modal" onclick="closeHistoryModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header" id="modal-title">Exercise History</div>
+            <div id="modal-rows-container"></div>
+            <button class="action-btn" style="margin-top: 15px; background: var(--accent);" onclick="closeHistoryModal()">Close History</button>
+        </div>
+    </div>
+
+    <div id="status">💪 Set Saved!</div>
+
+    <script>
+        const googleAppUrl = "https://script.google.com/macros/s/AKfycbx4tsVG7IoC16WpgakICXNzDqJ6-P5zn504-6kwsN2kWX_lH3DYNmZjchPiiMVonz8/exec";
+
+        let scheduleDatabase = [];
+        let rosterDatabase = [];
+        let historicalLogs = [];
+        let activeWorkout = null;
+
+        function initListeners() {
+            const picker = document.getElementById('date-picker');
+            picker.value = new Date().toISOString().split('T')[0];
+            picker.addEventListener('change', (e) => loadWorkoutForDate(e.target.value));
+            
+            document.getElementById('global-player').addEventListener('change', (e) => {
+                // Save selection to mobile browser memory right when changed
+                localStorage.setItem('rememberedBaseballPlayer', e.target.value);
+                const curDate = document.getElementById('date-picker').value;
+                loadWorkoutForDate(curDate); 
+            });
+        }
+
+        function fetchDatabaseResources() {
+            fetch(googleAppUrl)
+                .then(res => res.json())
+                .then(data => {
+                    scheduleDatabase = data.workouts || [];
+                    rosterDatabase = data.roster || [];
+                    historicalLogs = data.logs || [];
+                    
+                    buildRosterDropdown();
+                    loadWorkoutForDate(document.getElementById('date-picker').value);
+                })
+                .catch(err => console.error("Database extraction fault:", err));
+        }
+
+        function buildRosterDropdown() {
+            const dropdown = document.getElementById('global-player');
+            dropdown.innerHTML = ''; 
+            if(rosterDatabase.length === 0) rosterDatabase = ["Guest Athlete"];
+            rosterDatabase.forEach(p => {
+                let opt = document.createElement('option'); opt.value = p; opt.innerText = p; dropdown.appendChild(opt);
+            });
+
+            // Read the phone memory device cache configuration string
+            const savedPlayer = localStorage.getItem('rememberedBaseballPlayer');
+            if (savedPlayer && rosterDatabase.includes(savedPlayer)) {
+                dropdown.value = savedPlayer;
+            }
+        }
+
+        function getExerciseLastTimeText(exerciseName) {
+            const player = document.getElementById('global-player').value;
+            const matches = historicalLogs.filter(l => l.player === player && l.exercise === exerciseName);
+            if(matches.length === 0) return "No history recorded yet";
+            const lastSet = matches[matches.length - 1];
+            return `Last: ${lastSet.weight} lbs x ${lastSet.reps} Reps`;
+        }
+
+        function openHistoryModal(exerciseName) {
+            const player = document.getElementById('global-player').value;
+            document.getElementById('modal-title').innerText = exerciseName;
+            const container = document.getElementById('modal-rows-container');
+            container.innerHTML = '';
+            
+            const matches = historicalLogs.filter(l => l.player === player && l.exercise === exerciseName).reverse();
+            
+            if(matches.length === 0) {
+                container.innerHTML = `<div style="color:var(--muted); text-align:center; padding:20px;">No past data for ${player}</div>`;
+            } else {
+                matches.forEach(item => {
+                    let div = document.createElement('div');
+                    div.className = 'history-item-row';
+                    div.innerHTML = `<span>📅 Date: ${item.date}</span> <strong>🏋️ ${item.weight} lbs x ${item.reps}</strong>`;
+                    container.appendChild(div);
+                });
+            }
+            document.getElementById('history-modal').style.display = 'flex';
+        }
+
+        function closeHistoryModal() { document.getElementById('history-modal').style.display = 'none'; }
+
+        function loadWorkoutForDate(dateString) {
+            activeWorkout = scheduleDatabase.find(w => w.Date === dateString);
+            const content = document.getElementById('workout-content');
+            const noMsg = document.getElementById('no-workout-msg');
+            const container = document.getElementById('dynamic-blocks-container');
+            container.innerHTML = ''; 
+            
+            if (!activeWorkout) {
+                content.classList.add('hidden'); noMsg.classList.remove('hidden'); return;
+            }
+            content.classList.remove('hidden'); noMsg.classList.add('hidden');
+
+            if (activeWorkout.Warmup) {
+                document.getElementById('block-warmup').classList.remove('hidden');
+                document.getElementById('txt-warmup').innerText = activeWorkout.Warmup;
+            } else { document.getElementById('block-warmup').classList.add('hidden'); }
+
+            ['A', 'B', 'C', 'D'].forEach(letter => {
+                if (activeWorkout[`${letter}1_Exercise`]) {
+                    const ex1 = activeWorkout[`${letter}1_Exercise`];
+                    const ex2 = activeWorkout[`${letter}2_Exercise`];
+                    
+                    const blockHTML = `
+                        <div class="input-group">
+                            <div class="block-header">Block ${letter} (Superset)</div>
+                            
+                            <div class="exercise-container">
+                                <div class="exercise-title">${letter}1: ${ex1}</div>
+                                <div class="history-tag">
+                                    <span>${getExerciseLastTimeText(ex1)}</span>
+                                    <span class="view-hist-btn" onclick="openHistoryModal('${ex1.replace(/'/g, "\\'")}')">[History]</span>
+                                </div>
+                                <div class="prescription-tag">Target: ${activeWorkout[`${letter}1_Prescription`] || 'As Prescribed'}</div>
+                                <div class="row">
+                                    <div class="field"><label>${activeWorkout[`${letter}1_Type`] || 'Weight'}</label><input type="number" id="val-${letter}1" inputmode="numeric" placeholder="---"></div>
+                                    <div class="field"><label>Reps Done</label><input type="number" id="reps-${letter}1" inputmode="numeric" placeholder="---"></div>
+                                </div>
+                                <button class="action-btn" id="btn-${letter}1" onclick="logSupersetItem('${letter}', 1)">Log Set ${letter}1</button>
+                            </div>
+
+                            <div class="exercise-container" style="margin-top:15px; border-top:1px solid #333; padding-top:15px;">
+                                <div class="exercise-title">${letter}2: ${ex2}</div>
+                                <div class="history-tag">
+                                    <span>${getExerciseLastTimeText(ex2)}</span>
+                                    <span class="view-hist-btn" onclick="openHistoryModal('${ex2.replace(/'/g, "\\'")}')">[History]</span>
+                                </div>
+                                <div class="prescription-tag">Target: ${activeWorkout[`${letter}2_Prescription`] || 'As Prescribed'}</div>
+                                <div class="row">
+                                    <div class="field"><label>${activeWorkout[`${letter}2_Type`] || 'Weight'}</label><input type="number" id="val-${letter}2" inputmode="numeric" placeholder="---"></div>
+                                    <div class="field"><label>Reps Done</label><input type="number" id="reps-${letter}2" inputmode="numeric" placeholder="---"></div>
+                                </div>
+                                <button class="action-btn" id="btn-${letter}2" onclick="logSupersetItem('${letter}', 2)">Log Set ${letter}2</button>
+                            </div>
+                        </div>
+                    `;
+                    container.insertAdjacentHTML('beforeend', blockHTML);
+                }
+            });
+
+            if (activeWorkout.Core_Exercise) {
+                document.getElementById('block-core').classList.remove('hidden');
+                document.getElementById('txt-core').innerText = activeWorkout.Core_Exercise;
+                document.getElementById('rx-core').innerText = `Target: ${activeWorkout.Core_Prescription || 'As Prescribed'}`;
+                document.getElementById('lbl-core-type').innerText = activeWorkout.Core_Type || 'Reps';
+                document.getElementById('val-core').value = '';
+            } else { document.getElementById('block-core').classList.add('hidden'); }
+        }
+
+        function logSupersetItem(letter, subIndex) {
+            const btn = document.getElementById(`btn-${letter}${subIndex}`);
+            const valInput = document.getElementById(`val-${letter}${subIndex}`);
+            const repsInput = document.getElementById(`reps-${letter}${subIndex}`);
+            const exerciseName = activeWorkout[`${letter}${subIndex}_Exercise`];
+            
+            btn.innerText = "Saving...";
+
+            const payload = {
+                playerName: document.getElementById('global-player').value,
+                block: `Block ${letter}`,
+                exercise: exerciseName,
+                weight: valInput.value || 0,
+                reps: repsInput.value || 0
+            };
+
+            fetch(googleAppUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                showToast();
+                historicalLogs.push({
+                    date: "Today",
+                    player: payload.playerName,
+                    exercise: payload.exercise,
+                    weight: payload.weight,
+                    reps: payload.reps
+                });
+                valInput.value = ''; repsInput.value = '';
+                const curDate = document.getElementById('date-picker').value;
+                loadWorkoutForDate(curDate); 
+            }).catch(err => alert("Transmission fault: " + err))
+              .finally(() => btn.innerText = `Log Set ${letter}${subIndex}`);
+        }
+
+        function logCoreSet() {
+            const btn = document.getElementById('btn-core');
+            const coreInput = document.getElementById('val-core');
+            btn.innerText = "Saving...";
+
+            const payload = {
+                playerName: document.getElementById('global-player').value,
+                block: 'Core Block',
+                exercise: activeWorkout.Core_Exercise,
+                weight: coreInput.value || 0,
+                reps: 1
+            };
+
+            fetch(googleAppUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                showToast(); coreInput.value = '';
+            }).catch(err => alert(err))
+              .finally(() => btn.innerText = "Log Core Finisher");
+        }
+
+        function showToast() {
+            const t = document.getElementById('status'); t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 1500);
+        }
+
+        window.onload = () => { initListeners(); fetchDatabaseResources(); };
+    </script>
+</body>
+</html>
