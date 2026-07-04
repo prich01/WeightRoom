@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bearden Baseball Hub</title>
     <style>
-        :root { --bg: #121212; --card: #1e1e1e; --accent: #ff4757; --text: #ffffff; --muted: #a0a0a0; --success: #2ed573; }
+        :root { --bg: #121212; --card: #1e1e1e; --accent: #ff4757; --text: #ffffff; --muted: #a0a0a0; --success: #2ed573; --gold: #ffa500; }
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); padding: 15px; display: flex; justify-content: center; }
         .app-container { width: 100%; max-width: 420px; }
         header { text-align: center; margin-bottom: 20px; }
@@ -13,7 +13,6 @@
         
         .selector-group { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border: 1px solid #2d2d2d; display: flex; gap: 10px; }
         
-        /* Navigation Tabs Matrix */
         .tab-navigation { display: flex; gap: 8px; margin-bottom: 15px; }
         .nav-tab { flex: 1; text-align: center; background: #252525; border: 1px solid #383838; padding: 10px 5px; border-radius: 8px; font-size: 0.82rem; font-weight: bold; text-transform: uppercase; cursor: pointer; color: var(--muted); transition: all 0.2s; }
         .nav-tab.active-tab { background: var(--accent); color: white; border-color: var(--accent); }
@@ -36,7 +35,14 @@
         button.action-btn { width: 100%; background: #333; color: white; border: 1px solid #444; padding: 12px; border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer; margin-top: 2px; }
         button.action-btn:active { background: var(--accent); border-color: var(--accent); }
         
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; box-box-sizing: border-box; }
+        /* PR Ledger Styling Tables */
+        .pr-card { background: #161616; border: 1px dashed #444; border-radius: 10px; padding: 12px; margin-top: 15px; }
+        .pr-title { font-size: 0.85rem; font-weight: bold; color: var(--gold); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px; }
+        .pr-row { display: flex; justify-content: space-between; font-size: 0.9rem; padding: 6px 0; border-bottom: 1px dashed #2d2d2d; }
+        .pr-row:last-of-type { border-bottom: none; }
+        .pr-row span { color: var(--muted); font-size: 0.8rem; }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
         .modal-content { background: var(--card); border: 1px solid #444; border-radius: 16px; padding: 20px; width: 100%; max-width: 380px; box-sizing: border-box; max-height: 80vh; overflow-y: auto; }
         .modal-header { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 8px; color: var(--accent); text-transform: uppercase; }
         .history-item-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #2d2d2d; font-size: 0.95rem; }
@@ -113,11 +119,16 @@
                     <div class="field"><label>Broad Jump (in)</label><input type="number" id="t-broad" inputmode="numeric" placeholder="0"></div>
                     <div class="field"><label>Exit Velo (mph)</label><input type="number" id="t-exit" inputmode="numeric" placeholder="0"></div>
                 </div>
-                <div class="row" style="margin-bottom: 20px;">
+                <div class="row" style="margin-bottom: 15px;">
                     <div class="field"><label>Throwing Velo (mph)</label><input type="number" id="t-throw" inputmode="numeric" placeholder="0"></div>
                 </div>
                 
                 <button class="action-btn" id="btn-submit-testing" style="background: var(--success); border-color: var(--success);" onclick="submitTestingForm()">Submit Testing Data</button>
+                
+                <div class="pr-card">
+                    <div class="pr-title">🏆 Personal Best Testing Records</div>
+                    <div id="testing-prs-output"></div>
+                </div>
             </div>
         </div>
 
@@ -133,11 +144,16 @@
                     <div class="field"><label>Back Squat (lbs)</label><input type="number" id="m-squat" inputmode="numeric" placeholder="0"></div>
                     <div class="field"><label>Front Squat (lbs)</label><input type="number" id="m-front" inputmode="numeric" placeholder="0"></div>
                 </div>
-                <div class="row" style="margin-bottom: 20px;">
+                <div class="row" style="margin-bottom: 15px;">
                     <div class="field"><label>Hang Clean (lbs)</label><input type="number" id="m-clean" inputmode="numeric" placeholder="0"></div>
                 </div>
                 
                 <button class="action-btn" id="btn-submit-maxes" style="background: var(--success); border-color: var(--success);" onclick="submitMaxesForm()">Update Absolute Maxes</button>
+                
+                <div class="pr-card">
+                    <div class="pr-title">🥇 All-Time Weight Room Maxes</div>
+                    <div id="maxes-prs-output"></div>
+                </div>
             </div>
         </div>
 
@@ -154,11 +170,13 @@
     <div id="status">💪 Saved Successfully!</div>
 
     <script>
-        const googleAppUrl = "https://script.google.com/macros/s/AKfycbx4tsVG7IoC16WpgakICXNzDqJ6-P5zn504-6kwsN2kWX_lH3DYNmZjchPiiMVonz8/exec";
+        const googleAppUrl = "PASTE_YOUR_WEB_APP_URL_HERE";
 
         let scheduleDatabase = [];
         let rosterDatabase = [];
         let historicalLogs = [];
+        let testingLogs = [];
+        let maxesLogs = [];
         let activeWorkout = null;
 
         function initListeners() {
@@ -168,12 +186,12 @@
             
             document.getElementById('global-player').addEventListener('change', (e) => {
                 localStorage.setItem('rememberedBaseballPlayer', e.target.value);
+                calculatePlayerPersonalRecords();
                 loadWorkoutForDate(document.getElementById('date-picker').value); 
             });
         }
 
         function switchViewMode(mode) {
-            // Manage dynamic active status styling across elements
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active-tab'));
             document.getElementById('view-workout-container').classList.add('hidden');
             document.getElementById('view-testing-container').classList.add('hidden');
@@ -186,7 +204,7 @@
                 document.getElementById('view-workout-container').classList.remove('hidden');
             } else if(mode === 'test') {
                 document.getElementById('view-testing-container').classList.remove('hidden');
-                document.getElementById('date-wrapper').classList.add('hidden'); // date picker not needed for metric logs
+                document.getElementById('date-wrapper').classList.add('hidden');
             } else if(mode === 'max') {
                 document.getElementById('view-maxes-container').classList.remove('hidden');
                 document.getElementById('date-wrapper').classList.add('hidden');
@@ -200,8 +218,11 @@
                     scheduleDatabase = data.workouts || [];
                     rosterDatabase = data.roster || [];
                     historicalLogs = data.logs || [];
+                    testingLogs = data.testingLogs || [];
+                    maxesLogs = data.maxesLogs || [];
                     
                     buildRosterDropdown();
+                    calculatePlayerPersonalRecords();
                     loadWorkoutForDate(document.getElementById('date-picker').value);
                 })
                 .catch(err => console.error("Database extraction fault:", err));
@@ -220,6 +241,50 @@
             }
         }
 
+        function calculatePlayerPersonalRecords() {
+            const activePlayer = document.getElementById('global-player').value;
+            
+            // 1. Process Testing Sub-ledger (60 dash is lowest score wins, others are highest)
+            const pTests = testingLogs.filter(l => l.player === activePlayer);
+            let prTest = { bodyWeight: "---", sixtyDash: "---", broadJump: "---", exitVelo: "---", throwingVelo: "---" };
+            
+            pTests.forEach(row => {
+                if(row.bodyWeight && (prTest.bodyWeight === "---" || row.bodyWeight > 0)) prTest.bodyWeight = `${row.bodyWeight} lbs <span>(${row.date})</span>`;
+                if(row.sixtyDash && (prTest.sixtyDash === "---" || parseFloat(row.sixtyDash) < parseFloat(prTest.sixtyDash))) prTest.sixtyDash = `${row.sixtyDash} sec <span>(${row.date})</span>`;
+                if(row.broadJump && (prTest.broadJump === "---" || parseInt(row.broadJump) > parseInt(prTest.broadJump))) prTest.broadJump = `${row.broadJump} in <span>(${row.date})</span>`;
+                if(row.exitVelo && (prTest.exitVelo === "---" || parseInt(row.exitVelo) > parseInt(prTest.exitVelo))) prTest.exitVelo = `${row.exitVelo} mph <span>(${row.date})</span>`;
+                if(row.throwingVelo && (prTest.throwingVelo === "---" || parseInt(row.throwingVelo) > parseInt(prTest.throwingVelo))) prTest.throwingVelo = `${row.throwingVelo} mph <span>(${row.date})</span>`;
+            });
+            
+            document.getElementById('testing-prs-output').innerHTML = `
+                <div class="pr-row"><strong>Body Weight:</strong> ${prTest.bodyWeight}</div>
+                <div class="pr-row"><strong>⚡ 60-Yd Dash:</strong> ${prTest.sixtyDash}</div>
+                <div class="pr-row"><strong>🚀 Broad Jump:</strong> ${prTest.broadJump}</div>
+                <div class="pr-row"><strong>🔥 Exit Velo:</strong> ${prTest.exitVelo}</div>
+                <div class="pr-row"><strong>⚾ Throwing Velo:</strong> ${prTest.throwingVelo}</div>
+            `;
+
+            // 2. Process Weight Room Maxes Sub-ledger (Highest number wins)
+            const pMaxes = maxesLogs.filter(l => l.player === activePlayer);
+            let prMax = { benchPress: "---", hexDL: "---", squat: "---", frontSquat: "---", hangClean: "---" };
+            
+            pMaxes.forEach(row => {
+                if(row.benchPress && (prMax.benchPress === "---" || parseInt(row.benchPress) > parseInt(prMax.benchPress))) prMax.benchPress = `${row.benchPress} lbs <span>(${row.date})</span>`;
+                if(row.hexDL && (prMax.hexDL === "---" || parseInt(row.hexDL) > parseInt(prMax.hexDL))) prMax.hexDL = `${row.hexDL} lbs <span>(${row.date})</span>`;
+                if(row.squat && (prMax.squat === "---" || parseInt(row.squat) > parseInt(prMax.squat))) prMax.squat = `${row.squat} lbs <span>(${row.date})</span>`;
+                if(row.frontSquat && (prMax.frontSquat === "---" || parseInt(row.frontSquat) > parseInt(prMax.frontSquat))) prMax.frontSquat = `${row.frontSquat} lbs <span>(${row.date})</span>`;
+                if(row.hangClean && (prMax.hangClean === "---" || parseInt(row.hangClean) > parseInt(prMax.hangClean))) prMax.hangClean = `${row.hangClean} lbs <span>(${row.date})</span>`;
+            });
+
+            document.getElementById('maxes-prs-output').innerHTML = `
+                <div class="pr-row"><strong>Bench Press:</strong> ${prMax.benchPress}</div>
+                <div class="pr-row"><strong>Hex Deadlift:</strong> ${prMax.hexDL}</div>
+                <div class="pr-row"><strong>Back Squat:</strong> ${prMax.squat}</div>
+                <div class="pr-row"><strong>Front Squat:</strong> ${prMax.frontSquat}</div>
+                <div class="pr-row"><strong>Hang Clean:</strong> ${prMax.hangClean}</div>
+            `;
+        }
+
         function getExerciseLastTimeText(exerciseName) {
             const player = document.getElementById('global-player').value;
             const matches = historicalLogs.filter(l => l.player === player && l.exercise === exerciseName);
@@ -235,13 +300,11 @@
             container.innerHTML = '';
             
             const matches = historicalLogs.filter(l => l.player === player && l.exercise === exerciseName).reverse();
-            
             if(matches.length === 0) {
                 container.innerHTML = `<div style="color:var(--muted); text-align:center; padding:20px;">No past data for ${player}</div>`;
             } else {
                 matches.forEach(item => {
-                    let div = document.createElement('div');
-                    div.className = 'history-item-row';
+                    let div = document.createElement('div'); div.className = 'history-item-row';
                     div.innerHTML = `<span>📅 Date: ${item.date}</span> <strong>🏋️ ${item.weight} lbs x ${item.reps}</strong>`;
                     container.appendChild(div);
                 });
@@ -270,19 +333,13 @@
 
             ['A', 'B', 'C', 'D'].forEach(letter => {
                 if (activeWorkout[`${letter}1_Exercise`]) {
-                    const ex1 = activeWorkout[`${letter}1_Exercise`];
-                    const ex2 = activeWorkout[`${letter}2_Exercise`];
-                    
+                    const ex1 = activeWorkout[`${letter}1_Exercise`]; const ex2 = activeWorkout[`${letter}2_Exercise`];
                     const blockHTML = `
                         <div class="input-group">
                             <div class="block-header">Block ${letter} (Superset)</div>
-                            
                             <div class="exercise-container">
                                 <div class="exercise-title">${letter}1: ${ex1}</div>
-                                <div class="history-tag">
-                                    <span>${getExerciseLastTimeText(ex1)}</span>
-                                    <span class="view-hist-btn" onclick="openHistoryModal('${ex1.replace(/'/g, "\\'")}')">[History]</span>
-                                </div>
+                                <div class="history-tag"><span>${getExerciseLastTimeText(ex1)}</span><span class="view-hist-btn" onclick="openHistoryModal('${ex1.replace(/'/g, "\\'")}')">[History]</span></div>
                                 <div class="prescription-tag">Target: ${activeWorkout[`${letter}1_Prescription`] || 'As Prescribed'}</div>
                                 <div class="row">
                                     <div class="field"><label>${activeWorkout[`${letter}1_Type`] || 'Weight'}</label><input type="number" id="val-${letter}1" inputmode="numeric" placeholder="---"></div>
@@ -290,13 +347,9 @@
                                 </div>
                                 <button class="action-btn" id="btn-${letter}1" onclick="logSupersetItem('${letter}', 1)">Log Set ${letter}1</button>
                             </div>
-
                             <div class="exercise-container" style="margin-top:15px; border-top:1px solid #333; padding-top:15px;">
                                 <div class="exercise-title">${letter}2: ${ex2}</div>
-                                <div class="history-tag">
-                                    <span>${getExerciseLastTimeText(ex2)}</span>
-                                    <span class="view-hist-btn" onclick="openHistoryModal('${ex2.replace(/'/g, "\\'")}')">[History]</span>
-                                </div>
+                                <div class="history-tag"><span>${getExerciseLastTimeText(ex2)}</span><span class="view-hist-btn" onclick="openHistoryModal('${ex2.replace(/'/g, "\\'")}')">[History]</span></div>
                                 <div class="prescription-tag">Target: ${activeWorkout[`${letter}2_Prescription`] || 'As Prescribed'}</div>
                                 <div class="row">
                                     <div class="field"><label>${activeWorkout[`${letter}2_Type`] || 'Weight'}</label><input type="number" id="val-${letter}2" inputmode="numeric" placeholder="---"></div>
@@ -323,32 +376,21 @@
             const btn = document.getElementById(`btn-${letter}${subIndex}`);
             const valInput = document.getElementById(`val-${letter}${subIndex}`);
             const repsInput = document.getElementById(`reps-${letter}${subIndex}`);
-            const exerciseName = activeWorkout[`${letter}${subIndex}_Exercise`];
             btn.innerText = "Saving...";
 
             const payload = {
-                type: "workout",
-                playerName: document.getElementById('global-player').value,
-                block: `Block ${letter}`,
-                exercise: exerciseName,
-                weight: valInput.value || 0,
-                reps: repsInput.value || 0
+                type: "workout", playerName: document.getElementById('global-player').value,
+                block: `Block ${letter}`, exercise: activeWorkout[`${letter}${subIndex}_Exercise`],
+                weight: valInput.value || 0, reps: repsInput.value || 0
             };
 
-            fetch(googleAppUrl, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify(payload)
-            }).then(() => {
+            fetch(googleAppUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
+            .then(() => {
                 showToast();
-                historicalLogs.push({
-                    date: "Today", player: payload.playerName, exercise: payload.exercise, weight: payload.weight, reps: payload.reps
-                });
+                historicalLogs.push({ date: "Today", player: payload.playerName, exercise: payload.exercise, weight: payload.weight, reps: payload.reps });
                 valInput.value = ''; repsInput.value = '';
                 loadWorkoutForDate(document.getElementById('date-picker').value); 
-            }).catch(err => alert(err))
-              .finally(() => btn.innerText = `Log Set ${letter}${subIndex}`);
+            }).catch(err => alert(err)).finally(() => btn.innerText = `Log Set ${letter}${subIndex}`);
         }
 
         function submitTestingForm() {
@@ -356,8 +398,7 @@
             btn.innerText = "Transmitting...";
             
             const payload = {
-                type: "testing",
-                playerName: document.getElementById('global-player').value,
+                type: "testing", playerName: document.getElementById('global-player').value,
                 bodyWeight: document.getElementById('t-weight').value || 0,
                 sixtyDash: document.getElementById('t-sixty').value || 0,
                 broadJump: document.getElementById('t-broad').value || 0,
@@ -365,20 +406,14 @@
                 throwingVelo: document.getElementById('t-throw').value || 0
             };
 
-            fetch(googleAppUrl, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify(payload)
-            }).then(() => {
+            fetch(googleAppUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
+            .then(() => {
                 showToast();
-                document.getElementById('t-weight').value = '';
-                document.getElementById('t-sixty').value = '';
-                document.getElementById('t-broad').value = '';
-                document.getElementById('t-exit').value = '';
-                document.getElementById('t-throw').value = '';
-            }).catch(err => alert(err))
-              .finally(() => btn.innerText = "Submit Testing Data");
+                testingLogs.push({ date: "Today", player: payload.playerName, bodyWeight: payload.bodyWeight, sixtyDash: payload.sixtyDash, broadJump: payload.broadJump, exitVelo: payload.exitVelo, throwingVelo: payload.throwingVelo });
+                document.getElementById('t-weight').value = ''; document.getElementById('t-sixty').value = '';
+                document.getElementById('t-broad').value = ''; document.getElementById('t-exit').value = ''; document.getElementById('t-throw').value = '';
+                calculatePlayerPersonalRecords();
+            }).catch(err => alert(err)).finally(() => btn.innerText = "Submit Testing Data");
         }
 
         function submitMaxesForm() {
@@ -386,53 +421,33 @@
             btn.innerText = "Updating Records...";
             
             const payload = {
-                type: "maxes",
-                playerName: document.getElementById('global-player').value,
-                benchPress: document.getElementById('m-bench').value || 0,
-                hexDL: document.getElementById('m-hex').value || 0,
-                squat: document.getElementById('m-squat').value || 0,
-                frontSquat: document.getElementById('m-front').value || 0,
-                hangClean: document.getElementById('m-clean').value || 0
+                type: "maxes", playerName: document.getElementById('global-player').value,
+                benchPress: document.getElementById('m-bench').value || 0, hexDL: document.getElementById('m-hex').value || 0,
+                squat: document.getElementById('m-squat').value || 0, frontSquat: document.getElementById('m-front').value || 0, hangClean: document.getElementById('m-clean').value || 0
             };
 
-            fetch(googleAppUrl, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify(payload)
-            }).then(() => {
+            fetch(googleAppUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
+            .then(() => {
                 showToast();
-                document.getElementById('m-bench').value = '';
-                document.getElementById('m-hex').value = '';
-                document.getElementById('m-squat').value = '';
-                document.getElementById('m-front').value = '';
-                document.getElementById('m-clean').value = '';
-            }).catch(err => alert(err))
-              .finally(() => btn.innerText = "Update Absolute Maxes");
+                maxesLogs.push({ date: "Today", player: payload.playerName, benchPress: payload.benchPress, hexDL: payload.hexDL, squat: payload.squat, frontSquat: payload.frontSquat, hangClean: payload.hangClean });
+                document.getElementById('m-bench').value = ''; document.getElementById('m-hex').value = '';
+                document.getElementById('m-squat').value = ''; document.getElementById('m-front').value = ''; document.getElementById('m-clean').value = '';
+                calculatePlayerPersonalRecords();
+            }).catch(err => alert(err)).finally(() => btn.innerText = "Update Absolute Maxes");
         }
 
         function logCoreSet() {
-            const btn = document.getElementById('btn-core');
-            const coreInput = document.getElementById('val-core');
+            const btn = document.getElementById('btn-core'); const coreInput = document.getElementById('val-core');
             btn.innerText = "Saving...";
-
             const payload = {
-                type: "workout",
-                playerName: document.getElementById('global-player').value,
+                type: "workout", playerName: document.getElementById('global-player').value,
                 block: 'Core Block', exercise: activeWorkout.Core_Exercise, weight: coreInput.value || 0, reps: 1
             };
-
-            fetch(googleAppUrl, {
-                method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload)
-            }).then(() => { showToast(); coreInput.value = ''; })
-              .catch(err => alert(err))
-              .finally(() => btn.innerText = "Log Core Finisher");
+            fetch(googleAppUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
+            .then(() => { showToast(); coreInput.value = ''; }).catch(err => alert(err)).finally(() => btn.innerText = "Log Core Finisher");
         }
 
-        function showToast() {
-            const t = document.getElementById('status'); t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 1500);
-        }
-
+        function showToast() { const t = document.getElementById('status'); t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 1500); }
         window.onload = () => { initListeners(); fetchDatabaseResources(); };
     </script>
 </body>
