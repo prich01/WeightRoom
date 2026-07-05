@@ -60,7 +60,7 @@
 
     <div class="app-container">
         <header>
-            <h1>Bearden Baseball</h1>
+            <h1>⚡ Bearden Baseball</h1>
         </header>
 
         <div class="selector-group">
@@ -192,25 +192,25 @@
         let testingLogs = [];
         let maxesLogs = [];
         let exerciseLibrary = {};
+        let activePlayerMaxes = { benchPress: 0, hexDL: 0, squat: 0, frontSquat: 0, hangClean: 0 };
         let activeWorkout = null;
 
         function initListeners() {
-    const picker = document.getElementById('date-picker');
-    
-    // Forces the calendar picker to use your exact local device calendar day
-    const localNow = new Date();
-    const offset = localNow.getTimezoneOffset();
-    const adjustedDate = new Date(localNow.getTime() - (offset * 60 * 1000));
-    picker.value = adjustedDate.toISOString().split('T')[0];
-    
-    picker.addEventListener('change', (e) => loadWorkoutForDate(e.target.value));
-    
-    document.getElementById('global-player').addEventListener('change', (e) => {
-        localStorage.setItem('rememberedBaseballPlayer', e.target.value);
-        calculatePlayerPersonalRecords();
-        loadWorkoutForDate(document.getElementById('date-picker').value); 
-    });
-}
+            const picker = document.getElementById('date-picker');
+            
+            const localNow = new Date();
+            const offset = localNow.getTimezoneOffset();
+            const adjustedDate = new Date(localNow.getTime() - (offset * 60 * 1000));
+            picker.value = adjustedDate.toISOString().split('T')[0];
+            
+            picker.addEventListener('change', (e) => loadWorkoutForDate(e.target.value));
+            
+            document.getElementById('global-player').addEventListener('change', (e) => {
+                localStorage.setItem('rememberedBaseballPlayer', e.target.value);
+                calculatePlayerPersonalRecords();
+                loadWorkoutForDate(document.getElementById('date-picker').value); 
+            });
+        }
 
         function switchViewMode(mode) {
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active-tab'));
@@ -266,6 +266,9 @@
         function calculatePlayerPersonalRecords() {
             const activePlayer = document.getElementById('global-player').value;
             
+            // Clear current max state reference
+            activePlayerMaxes = { benchPress: 0, hexDL: 0, squat: 0, frontSquat: 0, hangClean: 0 };
+
             const pTests = testingLogs.filter(l => l.player === activePlayer);
             let prTest = { bodyWeight: "---", sixtyDash: "---", broadJump: "---", exitVelo: "---", throwingVelo: "---" };
             
@@ -289,11 +292,26 @@
             let prMax = { benchPress: "---", hexDL: "---", squat: "---", frontSquat: "---", hangClean: "---" };
             
             pMaxes.forEach(row => {
-                if(row.benchPress && (prMax.benchPress === "---" || parseInt(row.benchPress) > parseInt(prMax.benchPress))) prMax.benchPress = `${row.benchPress} lbs <span>(${row.date})</span>`;
-                if(row.hexDL && (prMax.hexDL === "---" || parseInt(row.hexDL) > parseInt(prMax.hexDL))) prMax.hexDL = `${row.hexDL} lbs <span>(${row.date})</span>`;
-                if(row.squat && (prMax.squat === "---" || parseInt(row.squat) > parseInt(prMax.squat))) prMax.squat = `${row.squat} lbs <span>(${row.date})</span>`;
-                if(row.frontSquat && (prMax.frontSquat === "---" || parseInt(row.frontSquat) > parseInt(prMax.frontSquat))) prMax.frontSquat = `${row.frontSquat} lbs <span>(${row.date})</span>`;
-                if(row.hangClean && (prMax.hangClean === "---" || parseInt(row.hangClean) > parseInt(prMax.hangClean))) prMax.hangClean = `${row.hangClean} lbs <span>(${row.date})</span>`;
+                if(row.benchPress && (prMax.benchPress === "---" || parseInt(row.benchPress) > activePlayerMaxes.benchPress)) {
+                    activePlayerMaxes.benchPress = parseInt(row.benchPress);
+                    prMax.benchPress = `${row.benchPress} lbs <span>(${row.date})</span>`;
+                }
+                if(row.hexDL && (prMax.hexDL === "---" || parseInt(row.hexDL) > activePlayerMaxes.hexDL)) {
+                    activePlayerMaxes.hexDL = parseInt(row.hexDL);
+                    prMax.hexDL = `${row.hexDL} lbs <span>(${row.date})</span>`;
+                }
+                if(row.squat && (prMax.squat === "---" || parseInt(row.squat) > activePlayerMaxes.squat)) {
+                    activePlayerMaxes.squat = parseInt(row.squat);
+                    prMax.squat = `${row.squat} lbs <span>(${row.date})</span>`;
+                }
+                if(row.frontSquat && (prMax.frontSquat === "---" || parseInt(row.frontSquat) > activePlayerMaxes.frontSquat)) {
+                    activePlayerMaxes.frontSquat = parseInt(row.frontSquat);
+                    prMax.frontSquat = `${row.frontSquat} lbs <span>(${row.date})</span>`;
+                }
+                if(row.hangClean && (prMax.hangClean === "---" || parseInt(row.hangClean) > activePlayerMaxes.hangClean)) {
+                    activePlayerMaxes.hangClean = parseInt(row.hangClean);
+                    prMax.hangClean = `${row.hangClean} lbs <span>(${row.date})</span>`;
+                }
             });
 
             document.getElementById('maxes-prs-output').innerHTML = `
@@ -311,6 +329,39 @@
             if(matches.length === 0) return "No history recorded yet";
             const lastSet = matches[matches.length - 1];
             return `Last: ${lastSet.weight} lbs x ${lastSet.reps} Reps`;
+        }
+
+        // Live Percentage Calculation Parser
+        function resolvePrescriptionString(exerciseName, rawPrescription) {
+            if (!rawPrescription) return "As Prescribed";
+            var rxStr = rawPrescription.toString().trim();
+            
+            // Check if percentage sign exists
+            if (!rxStr.includes("%")) return rxStr;
+            
+            // Parse out percentage integer (handles formats like "3x5@80%", "3x8 @ 75%", etc)
+            var numericMatch = rxStr.match(/(\d+)\s*%/);
+            if (!numericMatch) return rxStr;
+            var targetPercentage = parseInt(numericMatch[1]);
+            
+            // Match exercise string structure to discover the correct 1RM key value
+            var nameLower = exerciseName.toLowerCase();
+            var maxWeight = 0;
+            
+            if (nameLower.includes("bench")) maxWeight = activePlayerMaxes.benchPress;
+            else if (nameLower.includes("hex") || nameLower.includes("deadlift")) maxWeight = activePlayerMaxes.hexDL;
+            else if (nameLower.includes("front squat")) maxWeight = activePlayerMaxes.frontSquat;
+            else if (nameLower.includes("squat") || nameLower.includes("back squat")) maxWeight = activePlayerMaxes.squat;
+            else if (nameLower.includes("clean") || nameLower.includes("hang clean")) maxWeight = activePlayerMaxes.hangClean;
+            
+            // If no recorded max value exists, output original string safely
+            if (maxWeight === 0) return rxStr;
+            
+            // Calculate absolute target load, rounding cleanly to nearest 5 lbs
+            var exactLoad = maxWeight * (targetPercentage / 100);
+            var roundedLoad = Math.round(exactLoad / 5) * 5;
+            
+            return `${rxStr} (${roundedLoad} lbs)`;
         }
 
         function openHistoryModal(exerciseName) {
@@ -359,12 +410,19 @@
                     const isSuperset = (ex2 !== "");
                     const blockHeaderTitle = isSuperset ? `Block ${letter} (Superset)` : `Block ${letter} (Straight Set)`;
 
-                    // Match URLs from the master library dictionary mapping
-                    const videoUrl1 = exerciseLibrary[ex1] || null;
-                    const videoUrl2 = exerciseLibrary[ex2] || null;
+                    const libKeys = Object.keys(exerciseLibrary);
+                    const match1 = libKeys.find(k => k.toLowerCase() === ex1.toLowerCase());
+                    const match2 = libKeys.find(k => k.toLowerCase() === ex2.toLowerCase());
+
+                    const videoUrl1 = match1 ? exerciseLibrary[match1] : null;
+                    const videoUrl2 = match2 ? exerciseLibrary[match2] : null;
 
                     const videoBtnHtml1 = videoUrl1 ? `<a href="${videoUrl1}" target="_blank" class="video-btn">🎬 Watch Video</a>` : '';
                     const videoBtnHtml2 = videoUrl2 ? `<a href="${videoUrl2}" target="_blank" class="video-btn">🎬 Watch Video</a>` : '';
+
+                    // Resolve target prescription string using percentage evaluation loop
+                    const parsedRx1 = resolvePrescriptionString(ex1, activeWorkout[`${letter}1_Prescription`]);
+                    const parsedRx2 = resolvePrescriptionString(ex2, activeWorkout[`${letter}2_Prescription`]);
 
                     const blockHTML = `
                         <div class="input-group">
@@ -376,7 +434,7 @@
                                     ${videoBtnHtml1}
                                 </div>
                                 <div class="history-tag"><span>${getExerciseLastTimeText(ex1)}</span><span class="view-hist-btn" onclick="openHistoryModal('${ex1.replace(/'/g, "\\'")}')">[History]</span></div>
-                                <div class="prescription-tag">Target: ${activeWorkout[`${letter}1_Prescription`] || 'As Prescribed'}</div>
+                                <div class="prescription-tag">Target: ${parsedRx1}</div>
                                 <div class="row">
                                     <div class="field"><label>${activeWorkout[`${letter}1_Type`] || 'Weight'}</label><input type="number" id="val-${letter}1" inputmode="numeric" placeholder="---"></div>
                                     <div class="field"><label>Reps Done</label><input type="number" id="reps-${letter}1" inputmode="numeric" placeholder="---"></div>
@@ -390,7 +448,7 @@
                                     ${videoBtnHtml2}
                                 </div>
                                 <div class="history-tag"><span>${getExerciseLastTimeText(ex2)}</span><span class="view-hist-btn" onclick="openHistoryModal('${ex2.replace(/'/g, "\\'")}')">[History]</span></div>
-                                <div class="prescription-tag">Target: ${activeWorkout[`${letter}2_Prescription`] || 'As Prescribed'}</div>
+                                <div class="prescription-tag">Target: ${parsedRx2}</div>
                                 <div class="row">
                                     <div class="field"><label>${activeWorkout[`${letter}2_Type`] || 'Weight'}</label><input type="number" id="val-${letter}2" inputmode="numeric" placeholder="---"></div>
                                     <div class="field"><label>Reps Done</label><input type="number" id="reps-${letter}2" inputmode="numeric" placeholder="---"></div>
@@ -406,7 +464,7 @@
             if (activeWorkout.Core_Exercise) {
                 document.getElementById('block-core').classList.remove('hidden');
                 document.getElementById('txt-core').innerText = activeWorkout.Core_Exercise;
-                document.getElementById('rx-core').innerText = `Target: ${activeWorkout.Core_Prescription || 'As Prescribed'}`;
+                document.getElementById('rx-core').innerText = `Target: ${resolvePrescriptionString(activeWorkout.Core_Exercise, activeWorkout.Core_Prescription)}`;
                 document.getElementById('lbl-core-type').innerText = activeWorkout.Core_Type || 'Reps';
                 document.getElementById('val-core').value = '';
             } else { document.getElementById('block-core').classList.add('hidden'); }
