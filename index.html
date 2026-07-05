@@ -13,8 +13,8 @@
         
         .selector-group { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border: 1px solid #2d2d2d; display: flex; gap: 10px; }
         
-        .tab-navigation { display: flex; gap: 8px; margin-bottom: 15px; }
-        .nav-tab { flex: 1; text-align: center; background: #252525; border: 1px solid #383838; padding: 10px 5px; border-radius: 8px; font-size: 0.82rem; font-weight: bold; text-transform: uppercase; cursor: pointer; color: var(--muted); transition: all 0.2s; }
+        .tab-navigation { display: flex; gap: 4px; margin-bottom: 15px; }
+        .nav-tab { flex: 1; text-align: center; background: #252525; border: 1px solid #383838; padding: 10px 2px; border-radius: 8px; font-size: 0.78rem; font-weight: bold; text-transform: uppercase; cursor: pointer; color: var(--muted); transition: all 0.2s; }
         .nav-tab.active-tab { background: var(--accent); color: white; border-color: var(--accent); }
         
         .input-group { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #2d2d2d; }
@@ -46,6 +46,16 @@
         .pr-row:last-of-type { border-bottom: none; }
         .pr-row span { color: var(--muted); font-size: 0.8rem; }
         
+        /* Leaderboard Styles */
+        .board-selector { margin-bottom: 15px; }
+        .board-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #252525; margin-bottom: 6px; border-radius: 8px; border-left: 4px solid #444; font-size: 0.95rem; }
+        .board-row.rank-1 { border-left-color: var(--gold); background: linear-gradient(90deg, #2c2210 0%, #252525 100%); }
+        .board-row.rank-2 { border-left-color: #cbd5e1; }
+        .board-row.rank-3 { border-left-color: #cd7f32; }
+        .rank-num { font-weight: bold; color: var(--muted); width: 24px; display: inline-block; }
+        .rank-1 .rank-num { color: var(--gold); }
+        .board-value { font-weight: bold; color: var(--success); }
+        
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
         .modal-content { background: var(--card); border: 1px solid #444; border-radius: 16px; padding: 20px; width: 100%; max-width: 380px; box-sizing: border-box; max-height: 80vh; overflow-y: auto; }
         .modal-header { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 8px; color: var(--accent); text-transform: uppercase; }
@@ -60,10 +70,10 @@
 
     <div class="app-container">
         <header>
-            <h1>⚡ Bearden Baseball</h1>
+            <h1>Bearden Baseball</h1>
         </header>
 
-        <div class="selector-group">
+        <div class="selector-group" id="global-selectors">
             <div class="field" style="flex: 1.5;">
                 <label for="global-player">Active Athlete</label>
                 <select id="global-player">
@@ -80,6 +90,7 @@
             <div class="nav-tab active-tab" id="tab-lift" onclick="switchViewMode('lift')">Workout</div>
             <div class="nav-tab" id="tab-test" onclick="switchViewMode('test')">Testing</div>
             <div class="nav-tab" id="tab-max" onclick="switchViewMode('max')">Max Lifts</div>
+            <div class="nav-tab" id="tab-board" onclick="switchViewMode('board')">Leaderboard</div>
         </div>
 
         <div id="view-workout-container">
@@ -171,6 +182,29 @@
             </div>
         </div>
 
+        <div id="view-leaderboard-container" class="hidden">
+            <div class="input-group">
+                <div class="block-header">Team Rank Standings</div>
+                
+                <div class="field board-selector">
+                    <label for="board-metric-select">Choose Stat Board</label>
+                    <select id="board-metric-select" onchange="renderLeaderboardBoard()">
+                        <option value="exitVelo">🔥 Exit Velocity (mph)</option>
+                        <option value="sixtyDash">⚡ 60-Yard Dash (sec)</option>
+                        <option value="broadJump">🚀 Broad Jump (in)</option>
+                        <option value="throwingVelo">⚾ Throwing Velocity (mph)</option>
+                        <option value="benchPress">🏋️ Bench Press Max (lbs)</option>
+                        <option value="hexDL">💥 Hex Deadlift Max (lbs)</option>
+                        <option value="squat">🍗 Back Squat Max (lbs)</option>
+                        <option value="frontSquat">📐 Front Squat Max (lbs)</option>
+                        <option value="hangClean">🧼 Hang Clean Max (lbs)</option>
+                    </select>
+                </div>
+                
+                <div id="leaderboard-rows-wrapper" style="margin-top: 15px;"></div>
+            </div>
+        </div>
+
     </div>
 
     <div id="history-modal" class="modal" onclick="closeHistoryModal()">
@@ -217,6 +251,8 @@
             document.getElementById('view-workout-container').classList.add('hidden');
             document.getElementById('view-testing-container').classList.add('hidden');
             document.getElementById('view-maxes-container').classList.add('hidden');
+            document.getElementById('view-leaderboard-container').classList.add('hidden');
+            document.getElementById('global-selectors').classList.remove('hidden');
             document.getElementById('date-wrapper').classList.remove('hidden');
 
             document.getElementById(`tab-${mode}`).classList.add('active-tab');
@@ -229,6 +265,10 @@
             } else if(mode === 'max') {
                 document.getElementById('view-maxes-container').classList.remove('hidden');
                 document.getElementById('date-wrapper').classList.add('hidden');
+            } else if(mode === 'board') {
+                document.getElementById('view-leaderboard-container').classList.remove('hidden');
+                document.getElementById('global-selectors').classList.add('hidden');
+                renderLeaderboardBoard();
             }
         }
 
@@ -265,8 +305,6 @@
 
         function calculatePlayerPersonalRecords() {
             const activePlayer = document.getElementById('global-player').value;
-            
-            // Clear current max state reference
             activePlayerMaxes = { benchPress: 0, hexDL: 0, squat: 0, frontSquat: 0, hangClean: 0 };
 
             const pTests = testingLogs.filter(l => l.player === activePlayer);
@@ -323,6 +361,78 @@
             `;
         }
 
+        // Compile and Sort Live Top 5 Leaderboards
+        function renderLeaderboardBoard() {
+            const selectedMetric = document.getElementById('board-metric-select').value;
+            const wrapper = document.getElementById('leaderboard-rows-wrapper');
+            wrapper.innerHTML = '';
+            
+            // Determine if chosen category sits inside field testing array or barbell weight maxes array
+            const isTestingMetric = ['exitVelo', 'sixtyDash', 'broadJump', 'throwingVelo'].includes(selectedMetric);
+            const targetDataPool = isTestingMetric ? testingLogs : maxesLogs;
+            
+            // Step A: Group entries to extract the absolute best score per distinct player name
+            let bestScoresMap = {};
+            
+            targetDataPool.forEach(row => {
+                const name = row.player;
+                const scoreVal = parseFloat(row[selectedMetric]);
+                if (!name || isNaN(scoreVal) || scoreVal === 0) return;
+                
+                if (!bestScoresMap[name]) {
+                    bestScoresMap[name] = scoreVal;
+                } else {
+                    if (selectedMetric === 'sixtyDash') {
+                        // Sprint times require a lower absolute value to win rank standings
+                        if (scoreVal < bestScoresMap[name]) bestScoresMap[name] = scoreVal;
+                    } else {
+                        // Strength and power require a higher value to win rank standings
+                        if (scoreVal > bestScoresMap[name]) bestScoresMap[name] = scoreVal;
+                    }
+                }
+            });
+            
+            // Step B: Reshape map into sortable list array structure
+            let sortedLeaderboardList = [];
+            for (let player in bestScoresMap) {
+                sortedLeaderboardList.push({ name: player, score: bestScoresMap[player] });
+            }
+            
+            // Step C: Trigger numerical sort filter rules
+            if (selectedMetric === 'sixtyDash') {
+                sortedLeaderboardList.sort((a, b) => a.score - b.score);
+            } else {
+                sortedLeaderboardList.sort((a, b) => b.score - a.score);
+            }
+            
+            // Step D: Extract Top 5 entries and generate layout frame nodes on screen
+            const topFive = sortedLeaderboardList.slice(0, 5);
+            if (topFive.length === 0) {
+                wrapper.innerHTML = `<div style="text-align:center; color:var(--muted); padding:30px;">No records logged for this metric yet. 📈</div>`;
+                return;
+            }
+            
+            // Append clean label suffixes depending on selected dimension types
+            let unitSuffix = ' lbs';
+            if (selectedMetric === 'sixtyDash') unitSuffix = ' sec';
+            else if (selectedMetric === 'broadJump') unitSuffix = ' in';
+            else if (['exitVelo', 'throwingVelo'].includes(selectedMetric)) unitSuffix = ' mph';
+            
+            topFive.forEach((athlete, index) => {
+                const rankNum = index + 1;
+                const rowHTML = `
+                    <div class="board-row rank-${rankNum}">
+                        <div>
+                            <span class="rank-num">#${rankNum}</span>
+                            <strong>${athlete.name}</strong>
+                        </div>
+                        <div class="board-value">${athlete.score}${unitSuffix}</div>
+                    </div>
+                `;
+                wrapper.insertAdjacentHTML('beforeend', rowHTML);
+            });
+        }
+
         function getExerciseLastTimeText(exerciseName) {
             const player = document.getElementById('global-player').value;
             const matches = historicalLogs.filter(l => l.player === player && l.exercise === exerciseName);
@@ -331,20 +441,14 @@
             return `Last: ${lastSet.weight} lbs x ${lastSet.reps} Reps`;
         }
 
-        // Live Percentage Calculation Parser
         function resolvePrescriptionString(exerciseName, rawPrescription) {
             if (!rawPrescription) return "As Prescribed";
             var rxStr = rawPrescription.toString().trim();
-            
-            // Check if percentage sign exists
             if (!rxStr.includes("%")) return rxStr;
-            
-            // Parse out percentage integer (handles formats like "3x5@80%", "3x8 @ 75%", etc)
             var numericMatch = rxStr.match(/(\d+)\s*%/);
             if (!numericMatch) return rxStr;
             var targetPercentage = parseInt(numericMatch[1]);
             
-            // Match exercise string structure to discover the correct 1RM key value
             var nameLower = exerciseName.toLowerCase();
             var maxWeight = 0;
             
@@ -354,10 +458,8 @@
             else if (nameLower.includes("squat") || nameLower.includes("back squat")) maxWeight = activePlayerMaxes.squat;
             else if (nameLower.includes("clean") || nameLower.includes("hang clean")) maxWeight = activePlayerMaxes.hangClean;
             
-            // If no recorded max value exists, output original string safely
             if (maxWeight === 0) return rxStr;
             
-            // Calculate absolute target load, rounding cleanly to nearest 5 lbs
             var exactLoad = maxWeight * (targetPercentage / 100);
             var roundedLoad = Math.round(exactLoad / 5) * 5;
             
@@ -420,7 +522,6 @@
                     const videoBtnHtml1 = videoUrl1 ? `<a href="${videoUrl1}" target="_blank" class="video-btn">🎬 Watch Video</a>` : '';
                     const videoBtnHtml2 = videoUrl2 ? `<a href="${videoUrl2}" target="_blank" class="video-btn">🎬 Watch Video</a>` : '';
 
-                    // Resolve target prescription string using percentage evaluation loop
                     const parsedRx1 = resolvePrescriptionString(ex1, activeWorkout[`${letter}1_Prescription`]);
                     const parsedRx2 = resolvePrescriptionString(ex2, activeWorkout[`${letter}2_Prescription`]);
 
