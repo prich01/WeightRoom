@@ -56,7 +56,7 @@
 
     <div class="app-container">
         <header>
-            <h1>⚡ Bearden Baseball</h1>
+            <h1> Bearden Baseball</h1>
         </header>
 
         <div class="selector-group">
@@ -339,7 +339,7 @@
                 document.getElementById('txt-warmup').innerText = activeWorkout.Warmup;
             } else { document.getElementById('block-warmup').classList.add('hidden'); }
 
-            ['A', 'B', 'C', 'D'].forEach(letter => {
+            ['A', 'B', 'C', 'D', 'E'].forEach(letter => {
                 if (activeWorkout[`${letter}1_Exercise`]) {
                     const ex1 = activeWorkout[`${letter}1_Exercise`]; const ex2 = activeWorkout[`${letter}2_Exercise`];
                     const blockHTML = `
