@@ -195,16 +195,22 @@
         let activeWorkout = null;
 
         function initListeners() {
-            const picker = document.getElementById('date-picker');
-            picker.value = new Date().toISOString().split('T')[0];
-            picker.addEventListener('change', (e) => loadWorkoutForDate(e.target.value));
-            
-            document.getElementById('global-player').addEventListener('change', (e) => {
-                localStorage.setItem('rememberedBaseballPlayer', e.target.value);
-                calculatePlayerPersonalRecords();
-                loadWorkoutForDate(document.getElementById('date-picker').value); 
-            });
-        }
+    const picker = document.getElementById('date-picker');
+    
+    // Forces the calendar picker to use your exact local device calendar day
+    const localNow = new Date();
+    const offset = localNow.getTimezoneOffset();
+    const adjustedDate = new Date(localNow.getTime() - (offset * 60 * 1000));
+    picker.value = adjustedDate.toISOString().split('T')[0];
+    
+    picker.addEventListener('change', (e) => loadWorkoutForDate(e.target.value));
+    
+    document.getElementById('global-player').addEventListener('change', (e) => {
+        localStorage.setItem('rememberedBaseballPlayer', e.target.value);
+        calculatePlayerPersonalRecords();
+        loadWorkoutForDate(document.getElementById('date-picker').value); 
+    });
+}
 
         function switchViewMode(mode) {
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active-tab'));
