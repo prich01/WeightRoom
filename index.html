@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bearden Baseball Hub</title>
     <style>
-        :root { --bg: #121212; --card: #1e1e1e; --accent: #ff4757; --text: #ffffff; --muted: #a0a0a0; --success: #2ed573; --gold: #ffa500; }
+        :root { --bg: #121212; --card: #1e1e1e; --accent: #ff4757; --text: #ffffff; --muted: #a0a0a0; --success: #2ed573; --gold: #ffa500; --video-blue: #3498db; }
         body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); padding: 15px; display: flex; justify-content: center; }
         .app-container { width: 100%; max-width: 420px; }
         header { text-align: center; margin-bottom: 20px; }
@@ -20,8 +20,12 @@
         .input-group { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #2d2d2d; }
         .block-header { font-size: 0.85rem; font-weight: bold; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; letter-spacing: 0.5px; border-bottom: 1px solid #333; padding-bottom: 6px; }
         .exercise-container { margin-bottom: 15px; padding-bottom: 10px; }
-        .exercise-container:last-of-type { margin-bottom: 0; padding-bottom: 0; }
-        .exercise-title { font-size: 1.15rem; font-weight: bold; margin-bottom: 2px; }
+        .exercise-container:last-of-type { margin-bottom: 0; padding-bottom: 0; border-bottom: none !important; margin-bottom: 0 !important; padding-top: 0 !important; }
+        
+        .title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; gap: 10px; }
+        .exercise-title { font-size: 1.15rem; font-weight: bold; }
+        .video-btn { font-size: 0.75rem; background: #1a2a3a; color: var(--video-blue); border: 1px solid var(--video-blue); padding: 4px 8px; border-radius: 4px; text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; white-space: nowrap; transition: all 0.2s; }
+        .video-btn:active { background: var(--video-blue); color: white; }
         
         .history-tag { font-size: 0.82rem; color: var(--muted); margin-bottom: 8px; display: flex; justify-content: space-between; background: #252525; padding: 6px 10px; border-radius: 6px; }
         .view-hist-btn { color: var(--accent); text-decoration: underline; cursor: pointer; font-weight: bold; }
@@ -56,7 +60,7 @@
 
     <div class="app-container">
         <header>
-            <h1> Bearden Baseball</h1>
+            <h1>⚡ Bearden Baseball</h1>
         </header>
 
         <div class="selector-group">
@@ -119,7 +123,7 @@
 
         <div id="view-testing-container" class="hidden">
             <div class="input-group">
-                <div class="block-header">Athletic Performance Metrics</div>
+                <div class="block-header">Field Testing Matrix</div>
                 
                 <div class="row">
                     <div class="field"><label>Body Weight (lbs)</label><input type="number" step="0.1" id="t-weight" inputmode="decimal" placeholder="0.0"></div>
@@ -187,6 +191,7 @@
         let historicalLogs = [];
         let testingLogs = [];
         let maxesLogs = [];
+        let exerciseLibrary = {};
         let activeWorkout = null;
 
         function initListeners() {
@@ -230,6 +235,7 @@
                     historicalLogs = data.logs || [];
                     testingLogs = data.testingLogs || [];
                     maxesLogs = data.maxesLogs || [];
+                    exerciseLibrary = data.library || {};
                     
                     buildRosterDropdown();
                     calculatePlayerPersonalRecords();
@@ -341,12 +347,28 @@
 
             ['A', 'B', 'C', 'D', 'E'].forEach(letter => {
                 if (activeWorkout[`${letter}1_Exercise`]) {
-                    const ex1 = activeWorkout[`${letter}1_Exercise`]; const ex2 = activeWorkout[`${letter}2_Exercise`];
+                    const ex1 = activeWorkout[`${letter}1_Exercise`].toString().trim();
+                    const ex2 = activeWorkout[`${letter}2_Exercise`] ? activeWorkout[`${letter}2_Exercise`].toString().trim() : "";
+                    
+                    const isSuperset = (ex2 !== "");
+                    const blockHeaderTitle = isSuperset ? `Block ${letter} (Superset)` : `Block ${letter} (Straight Set)`;
+
+                    // Match URLs from the master library dictionary mapping
+                    const videoUrl1 = exerciseLibrary[ex1] || null;
+                    const videoUrl2 = exerciseLibrary[ex2] || null;
+
+                    const videoBtnHtml1 = videoUrl1 ? `<a href="${videoUrl1}" target="_blank" class="video-btn">🎬 Watch Video</a>` : '';
+                    const videoBtnHtml2 = videoUrl2 ? `<a href="${videoUrl2}" target="_blank" class="video-btn">🎬 Watch Video</a>` : '';
+
                     const blockHTML = `
                         <div class="input-group">
-                            <div class="block-header">Block ${letter} (Superset)</div>
+                            <div class="block-header">${blockHeaderTitle}</div>
+                            
                             <div class="exercise-container">
-                                <div class="exercise-title">${letter}1: ${ex1}</div>
+                                <div class="title-row">
+                                    <div class="exercise-title">${letter}1: ${ex1}</div>
+                                    ${videoBtnHtml1}
+                                </div>
                                 <div class="history-tag"><span>${getExerciseLastTimeText(ex1)}</span><span class="view-hist-btn" onclick="openHistoryModal('${ex1.replace(/'/g, "\\'")}')">[History]</span></div>
                                 <div class="prescription-tag">Target: ${activeWorkout[`${letter}1_Prescription`] || 'As Prescribed'}</div>
                                 <div class="row">
@@ -355,8 +377,12 @@
                                 </div>
                                 <button class="action-btn" id="btn-${letter}1" onclick="logSupersetItem('${letter}', 1)">Log Set ${letter}1</button>
                             </div>
-                            <div class="exercise-container" style="margin-top:15px; border-top:1px solid #333; padding-top:15px;">
-                                <div class="exercise-title">${letter}2: ${ex2}</div>
+                            
+                            <div class="exercise-container ${isSuperset ? '' : 'hidden'}" style="margin-top:15px; border-top:1px solid #333; padding-top:15px;">
+                                <div class="title-row">
+                                    <div class="exercise-title">${letter}2: ${ex2}</div>
+                                    ${videoBtnHtml2}
+                                </div>
                                 <div class="history-tag"><span>${getExerciseLastTimeText(ex2)}</span><span class="view-hist-btn" onclick="openHistoryModal('${ex2.replace(/'/g, "\\'")}')">[History]</span></div>
                                 <div class="prescription-tag">Target: ${activeWorkout[`${letter}2_Prescription`] || 'As Prescribed'}</div>
                                 <div class="row">
@@ -379,7 +405,6 @@
                 document.getElementById('val-core').value = '';
             } else { document.getElementById('block-core').classList.add('hidden'); }
 
-            // Unhide the training session notes frame if a workout exists for today
             document.getElementById('block-notes').classList.remove('hidden');
         }
 
@@ -411,19 +436,12 @@
             btn.innerText = "Saving Note...";
 
             const payload = {
-                type: "workout",
-                playerName: document.getElementById('global-player').value,
-                block: "Notes Block",
-                exercise: "Workout Notes",
-                weight: txtArea.value, // Text routes into weight column perfectly
-                reps: 0
+                type: "workout", playerName: document.getElementById('global-player').value,
+                block: "Notes Block", exercise: "Workout Notes", weight: txtArea.value, reps: 0
             };
 
             fetch(googleAppUrl, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
-            .then(() => {
-                showToast();
-                txtArea.value = '';
-            }).catch(err => alert(err)).finally(() => btn.innerText = "Submit Workout Notes");
+            .then(() => { showToast(); txtArea.value = ''; }).catch(err => alert(err)).finally(() => btn.innerText = "Submit Workout Notes");
         }
 
         function submitTestingForm() {
